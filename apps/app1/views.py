@@ -1,9 +1,11 @@
-from django.http import JsonResponse, HttpResponse
-from django.shortcuts import render
+import logging
+
+from django.http import JsonResponse
 
 # Create your views here.
-from app1 import models
+from apps.app1 import models
 
+logger = logging.getLogger(__name__)
 
 def health(request):
 
@@ -27,5 +29,6 @@ def create(request):
     mail1 = models.Mail.objects.create(address=mailaddress, person_id=person1.id)
     book1 = models.Book.objects.create(name=bookname, mail_id=mail1.id)
     book2 = models.Book2.objects.create(name2=bookname2, book_id=book1.id)
+    logger.error("34")
 
     return JsonResponse("create", safe=False)

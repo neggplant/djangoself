@@ -12,21 +12,16 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 
 import os
 
+from conf.env import *
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'v=+rn3_lflzervi#e!u!(a+y34t$%0dz^bznkfe^-ocp3)^4nk'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ["*"]
-
 
 # Application definition
 
@@ -37,7 +32,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'app1',
+    'apps.app1',
 ]
 
 MIDDLEWARE = [
@@ -50,7 +45,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'djangoself.urls'
+ROOT_URLCONF = 'application.urls'
 
 TEMPLATES = [
     {
@@ -68,26 +63,49 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'djangoself.wsgi.application'
-
+WSGI_APPLICATION = 'application.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
-import pymysql
-pymysql.install_as_MySQLdb()
+# import pymysql
+#
+# pymysql.install_as_MySQLdb()
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.getenv('DB_NAME', "djangoself"),
-        'USER': os.getenv('DB_USER', "myuser"),
-        'PASSWORD': os.getenv('DB_PASS', "myuser"),
-        'HOST': os.getenv('DB_HOST', "192.168.126.128"),
-        'PORT': int(os.getenv('DB_PORT', 3306)),
-    },
-}
+if DATABASE_TYPE == "MYSQL":
+    # Mysql数据库
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "HOST": os.getenv('DATABASE_HOST') or DATABASE_HOST,
+            "PORT": os.getenv('DATABASE_PORT') or DATABASE_PORT,
+            "USER": os.getenv('DATABASE_USER') or DATABASE_USER,
+            "PASSWORD": os.getenv('DATABASE_PASSWORD') or DATABASE_PASSWORD,
+            "NAME": os.getenv('DATABASE_NAME') or DATABASE_NAME,
+        }
+    }
+else:
+    # sqlite3 数据库
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        }
+    }
 
+# redis 缓存
+REDIS_URL = f'redis://:{REDIS_PASSWORD if REDIS_PASSWORD else ""}@{os.getenv("REDIS_HOST") or REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}'
+# 是否启用redis
+if locals().get("REDIS_ENABLE", True):
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            }
+        },
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
@@ -107,13 +125,12 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'zh-hans'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Shanghai'
 
 USE_I18N = True
 
@@ -121,12 +138,22 @@ USE_L10N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
 
+"""
+日志配置
+"""
+# log 配置部分BEGIN #
+APPS_LOGS_FILE = os.path.join(BASE_DIR, 'logs', 'apps.log')
+ERROR_LOGS_FILE = os.path.join(BASE_DIR, 'logs', 'error.log')
+DB_LOGS_FILE = os.path.join(BASE_DIR, 'logs', 'db.log')
+SERVER_LOGS_FILE = os.path.join(BASE_DIR, 'logs', 'server.log')
+# make folder of logs
+if not os.path.exists(os.path.join(BASE_DIR, 'logs')):
+    os.makedirs(os.path.join(BASE_DIR, 'logs'))
 
 LOGGING = {
     'version': 1,
@@ -145,23 +172,46 @@ LOGGING = {
     },
     'handlers': {
         'console': {
+            # not use level here, it is an error config.
             'level': 'DEBUG',
             # 'filters': ['require_debug_true'],
             'class': 'logging.StreamHandler',
             'formatter': 'standard'
         },
-        'default': {
-            'level': 'DEBUG',
+        'apps': {
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': "temp.log",
+            'filename': APPS_LOGS_FILE,
+            'maxBytes': 1024 * 1024 * 20,
+            'backupCount': 5,
+            'formatter': 'standard'
+        },
+        'db': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': DB_LOGS_FILE,
+            'maxBytes': 1024 * 1024 * 20,
+            'backupCount': 5,
+            'formatter': 'standard'
+        },
+        'server': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': SERVER_LOGS_FILE,
             'maxBytes': 1024 * 1024 * 20,
             'backupCount': 5,
             'formatter': 'standard'
         },
     },
     'loggers': {
-        'django.db.backends': {
-            'handlers': ['console'],
+        '': {
+            'handlers': ['console', "server"],
+            # default INFO if no level
+            'level': 'DEBUG',
+        },
+        'apps': {
+            'handlers': ["apps"],
+            'level': 'DEBUG',
+        },
+        'django.db': {
+            'handlers': ['db'],
             'level': 'DEBUG',
         },
     }
