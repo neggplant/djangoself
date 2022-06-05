@@ -1,13 +1,19 @@
 import logging
+import time
 
 from django.http import JsonResponse
 
 # Create your views here.
 from apps.app1 import models
+from apps.app1.tasks import add, sleep
 
 logger = logging.getLogger(__name__)
 
 def health(request):
+
+    return JsonResponse("health", safe=False)
+
+def health1(request):
 
     a = models.Book2.objects.filter(name2="book2").select_related("book")
     c = models.Book2.objects.filter(name2="book2").select_related("book", "book__mail", "book__mail__person")
@@ -15,7 +21,7 @@ def health(request):
     b = a[0].book.mail
     d = c[0].book.mail
 
-    return JsonResponse("wer", safe=False)
+    return JsonResponse("health1", safe=False)
     # return HttpResponse("wer")
 
 

@@ -2,16 +2,10 @@
 ## 使用功能mysql引擎
 
 ```markdown
-在windows中使用pymysql
-链接：https://stackoverflow.com/questions/50970188/did-you-install-mysqlclient/54200666
-
-# linux
-sudo apt-get install libmysqlclient-dev
+使用mysqlclient包连接mysql
 ```
 
-```python
-# Then edit the init.py file in project root directory (where settings.py file located)
-# 在windows pip install pymysql
-import pymysql
-pymysql.install_as_MySQLdb()
+```bash
+celery -A application worker --loglevel=INFO -c 2 --pool=solo -Ofair
+celery -A application worker --loglevel=INFO -c 2 --pool=eventlet -Ofair
 ```
