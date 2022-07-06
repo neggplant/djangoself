@@ -72,9 +72,21 @@ WSGI_APPLICATION = 'application.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
-# import pymysql
-#
-# pymysql.install_as_MySQLdb()
+if DEBUG:
+    # Django Debug Toolbar 设置
+    INSTALLED_APPS += ["debug_toolbar"]
+    MIDDLEWARE = ['debug_toolbar.middleware.DebugToolbarMiddleware'] + MIDDLEWARE
+    INTERNAL_IPS = ['127.0.0.1', ]
+
+    # this is the main reason for not showing up the toolbar
+    import mimetypes
+
+    mimetypes.add_type("application/javascript", ".js", True)
+
+    DEBUG_TOOLBAR_CONFIG = {
+        'SHOW_TOOLBAR_CALLBACK': lambda request: False if request.is_ajax() else True,
+    }
+
 
 if DATABASE_TYPE == "MYSQL":
     # Mysql数据库
@@ -157,8 +169,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
-STATIC_URL = '/static/'
-
+STATIC_URL = 'static/'
+# STATIC_ROOT = './static/'
 """
 Celery配置
 """
