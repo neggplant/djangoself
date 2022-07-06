@@ -7,13 +7,13 @@ DEBUG = True
 # 数据库类型 MYSQL/SQLITE3
 DATABASE_TYPE = "MYSQL"
 # 数据库地址
-DATABASE_HOST = "192.168.152.129"
+DATABASE_HOST = "192.168.126.153"
 # 数据库端口
 DATABASE_PORT = 3306
 # 数据库用户名
-DATABASE_USER = "mysqluser"
+DATABASE_USER = "myuser"
 # 数据库密码
-DATABASE_PASSWORD = "mysqluser"
+DATABASE_PASSWORD = "myuser"
 # 数据库名
 DATABASE_NAME = "djangoself"
 
@@ -25,9 +25,9 @@ DATABASE_NAME = "djangoself"
 REDIS_ENABLE = True
 IS_REDIS_CLUSTER = False
 REDIS_DB = 1
-REDIS_HOST = '192.168.152.129'
+REDIS_HOST = '192.168.126.153'
 REDIS_PORT = 6379
-REDIS_PASSWORD = 'aa#aa@aa'
+REDIS_PASSWORD = ''
 # celery 定时任务redis 库号
 CELERY_DB = 0
 

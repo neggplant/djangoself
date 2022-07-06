@@ -7,8 +7,8 @@ from django.http import JsonResponse
 # Create your views here.
 from django.views import View
 
-from apps.app1 import models
-from apps.app1.tasks import add, sleep
+from apps.baseapp import models
+from apps.baseapp.tasks import add, sleep
 
 logger = logging.getLogger(__name__)
 
