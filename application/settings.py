@@ -11,6 +11,10 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
+import sys
+from urllib.parse import quote
+
+from kombu import Queue, Exchange
 
 from conf.env import *
 
@@ -32,7 +36,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'apps.app1',
+    'apps.baseapp',
+    'apps.appdjango',
 ]
 
 MIDDLEWARE = [
@@ -68,9 +73,38 @@ WSGI_APPLICATION = 'application.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
-# import pymysql
-#
-# pymysql.install_as_MySQLdb()
+if DEBUG:
+    # Django Debug Toolbar 设置
+    INSTALLED_APPS += ["debug_toolbar"]
+    MIDDLEWARE = ['debug_toolbar.middleware.DebugToolbarMiddleware'] + MIDDLEWARE
+    INTERNAL_IPS = ['127.0.0.1', ]
+
+    # this is the main reason for not showing up the toolbar
+    import mimetypes
+
+    mimetypes.add_type("application/javascript", ".js", True)
+    mimetypes.add_type("text/css", ".css", True)
+    mimetypes.add_type("text/javascript", ".js", True)
+
+    DEBUG_TOOLBAR_CONFIG = {
+        'SHOW_TOOLBAR_CALLBACK': lambda request: False if request.is_ajax() else True,
+        "INTERCEPT_REDIRECTS": False,
+    }
+
+if OPEN_SILK:
+    INSTALLED_APPS += ['silk']
+    MIDDLEWARE += ['silk.middleware.SilkyMiddleware']
+    # True：使用Python的内置cProfile分析器
+    SILKY_PYTHON_PROFILER = True
+    # 生成.prof文件，silk产生的程序跟踪记录，详细记录来执行的文件，行，时间等信息
+    SILKY_PYTHON_PROFILER_BINARY = False
+    if sys.platform == "win32":
+        SILK_RESULT_PATH = os.path.join(BASE_DIR, 'log', 'silk', 'profiles')
+    else:
+        SILK_RESULT_PATH = os.path.join(os.getenv("SILK_RESULT_PATH", "/var/log"), 'silk', "profiles")
+    os.makedirs(SILK_RESULT_PATH, exist_ok=True)
+    # 如果没有本设置，prof文件将默认保存在MEDIA_ROOT里
+    SILKY_PYTHON_PROFILER_RESULT_PATH = SILK_RESULT_PATH
 
 if DATABASE_TYPE == "MYSQL":
     # Mysql数据库
@@ -93,17 +127,29 @@ else:
         }
     }
 
-# redis 缓存
-REDIS_URL = f'redis://:{REDIS_PASSWORD if REDIS_PASSWORD else ""}@{os.getenv("REDIS_HOST") or REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}'
+# 是否使用redis集群
+if IS_REDIS_CLUSTER:
+    REDIS_LOCATION = 'redis://:{}@{}:{}/{}'.format(quote(REDIS_PASSWORD), REDIS_HOST, REDIS_PORT, REDIS_DB)
+    REDIS_CLIENT_CLASS = 'redis.RedisCluster'
+    CONNECTION_POOL_CLASS = 'redis.ConnectionPool'
+    CONNECTION_POOL_KWARGS = {'skip_full_coverage_check': True, 'decode_components': True, 'max_connections': 200}
+else:
+    # quote和decode_components为防止redis密码中带有#?等特殊字符
+    REDIS_LOCATION = 'redis://:{}@{}:{}/{}'.format(quote(REDIS_PASSWORD), REDIS_HOST, REDIS_PORT, REDIS_DB)
+    REDIS_CLIENT_CLASS = 'redis.client.StrictRedis'
+    CONNECTION_POOL_CLASS = 'redis.connection.ConnectionPool'
+    CONNECTION_POOL_KWARGS = {'decode_components': True}
+
 # 是否启用redis
 if locals().get("REDIS_ENABLE", True):
     CACHES = {
         "default": {
             "BACKEND": "django_redis.cache.RedisCache",
-            "LOCATION": REDIS_URL,
-            "OPTIONS": {
-                "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            }
+            "LOCATION": REDIS_LOCATION,
+            'REDIS_CLIENT_CLASS': REDIS_CLIENT_CLASS,
+            'CONNECTION_POOL_CLASS': CONNECTION_POOL_CLASS,
+            'CONNECTION_POOL_KWARGS': CONNECTION_POOL_KWARGS,
+            "DECODE_RESPONSES": True
         },
     }
 
@@ -141,7 +187,51 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+"""
+Celery配置
+"""
+# rabbit server
+RABBIT_HOST = os.getenv('RABBIT_HOST', '127.0.0.1')
+RABBIT_PORT = os.getenv('RABBIT_PORT', 5672)
+RABBIT_USER = os.getenv('RABBIT_USER', 'rabbit')
+RABBIT_PASSWORD = os.getenv('RABBIT_PASSWORD', 'rabbit')
+RABBIT_VHOST = os.getenv('RABBIT_VHOST', "/")
+
+# Celery
+# todo:若使用redis集群，将celery结果存入Mysql，
+BROKER_BACKEND_URL = 'redis://:{}@{}:{}/{}'.format(quote(REDIS_PASSWORD), REDIS_HOST, REDIS_PORT, REDIS_DB)
+BROKER_URL = 'amqp://{user}:{password}@{host}:{port}/{vhost}'.format(
+    user=RABBIT_USER,
+    password=RABBIT_PASSWORD,
+    host=RABBIT_HOST,
+    port=RABBIT_PORT,
+    vhost=RABBIT_VHOST
+)
+CELERY_BROKER_URL = BROKER_URL
+CELERY_RESULT_BACKEND = BROKER_BACKEND_URL
+# CELERY_RESULT_PERSISTENT = False
+# CELERY_ACCEPT_CONTENT = ['application/json']
+# CELERY_TASK_SERIALIZER = 'json'
+# CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Shanghai'
+# CELERY_ENABLE_UTC = True,
+# CELERY_CREATE_MISSING_QUEUES = True
+# CELERYD_FORCE_EXECV = True  # 有些情况下可以防止死锁
+CELERY_WORKER_PREFETCH_MULTIPLIER = 3
+# CELERY_TASK_TRACK_STARTED = False
+# CELERYD_MAX_TASKS_PER_CHILD = 50
+# CELERY_TASK_RESULT_EXPIRES = 24 * 60 * 60
+# CELERY_BROKER_HEARTBEAT = 0
+# CELERY_BROKER_POOL_LIMIT = 0
+CELERY_DEFAULT_QUEUE = "djangoself"
+# CELERY_QUEUES = (
+#     # Queue('celery', exchange=Exchange('celery'), routing_key='celery'),
+#     Queue(CELERY_DEFAULT_QUEUE, exchange=Exchange(CELERY_DEFAULT_QUEUE), routing_key=CELERY_DEFAULT_QUEUE),
+# )
+
 
 """
 日志配置
