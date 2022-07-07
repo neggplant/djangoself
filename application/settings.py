@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
+import sys
 from urllib.parse import quote
 
 from kombu import Queue, Exchange
@@ -87,8 +88,23 @@ if DEBUG:
 
     DEBUG_TOOLBAR_CONFIG = {
         'SHOW_TOOLBAR_CALLBACK': lambda request: False if request.is_ajax() else True,
+        "INTERCEPT_REDIRECTS": False,
     }
 
+if OPEN_SILK:
+    INSTALLED_APPS += ['silk']
+    MIDDLEWARE += ['silk.middleware.SilkyMiddleware']
+    # True：使用Python的内置cProfile分析器
+    SILKY_PYTHON_PROFILER = True
+    # 生成.prof文件，silk产生的程序跟踪记录，详细记录来执行的文件，行，时间等信息
+    SILKY_PYTHON_PROFILER_BINARY = False
+    if sys.platform == "win32":
+        SILK_RESULT_PATH = os.path.join(BASE_DIR, 'log', 'silk', 'profiles')
+    else:
+        SILK_RESULT_PATH = os.path.join(os.getenv("SILK_RESULT_PATH", "/var/log"), 'silk', "profiles")
+    os.makedirs(SILK_RESULT_PATH, exist_ok=True)
+    # 如果没有本设置，prof文件将默认保存在MEDIA_ROOT里
+    SILKY_PYTHON_PROFILER_RESULT_PATH = SILK_RESULT_PATH
 
 if DATABASE_TYPE == "MYSQL":
     # Mysql数据库
@@ -172,7 +188,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = 'static/'
-# STATIC_ROOT = './static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
 """
 Celery配置
 """
