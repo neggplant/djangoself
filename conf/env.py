@@ -1,7 +1,7 @@
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 # Django silk
-OPEN_SILK = True
+OPEN_SILK = False
 
 # ================================================= #
 # ************** mysql数据库 配置  ************** #
