@@ -21,7 +21,8 @@ from django.urls import path, include, re_path
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('base/', include("apps.baseapp.urls")),
-    path('django/', include("apps.appdjango.urls")),
+    path('dj/', include("apps.djapp.urls")),
+    path('drf/', include("apps.drfapp.urls")),
 ]
 
 if settings.DEBUG:
