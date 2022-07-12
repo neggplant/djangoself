@@ -1,3 +1,5 @@
+from django.db.models import Count, Avg
+
 from ..models import Snippet
 from ..serializers import SnippetSerializer
 from django.http import Http404
@@ -6,13 +8,19 @@ from rest_framework.response import Response
 from rest_framework import status, generics
 
 
-class SnippetList(APIView):
+class SnippetAggregate(APIView):
     """
     List all snippets, or create a new snippet.
     """
 
     def get(self, request, format=None):
         snippets = Snippet.objects.all()
+        # 分组查询values，
+        # values中的唯一的数量
+        # 注意若模型meta中包含order，则后面必须加order_by，否则出错，也会包含在分组里，
+        code_number = snippets.values('code').annotate(code_count=Count('id')).filter(code__gt=0).order_by('code')
+        print(code_number)
+        avg_line = snippets.aggregate(Avg("linenos"))
         serializer = SnippetSerializer(snippets, many=True)
         return Response(serializer.data)
 
