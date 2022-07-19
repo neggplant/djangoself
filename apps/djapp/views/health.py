@@ -1,5 +1,6 @@
 import logging
 
+from django.core.mail import send_mail
 from django.http import HttpResponse
 
 from django.views import View
@@ -21,3 +22,17 @@ class QustionChoiceView(View):
         output = gettext("太阳:egg")
         return HttpResponse(output)
         # return HttpResponse("QustionChoiceView:{}".format(1))
+
+
+class SendEmailView(View):
+
+    def get(self, request):
+
+        send_mail(
+            'Subject here',
+            'Here is the message.',
+            'cq4050@163.com',
+            ['cq4050@163.com'],
+            fail_silently=False,
+        )
+        return HttpResponse("send_mail success")

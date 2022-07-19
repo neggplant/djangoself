@@ -1,4 +1,6 @@
 # SECURITY WARNING: don't run with debug turned on in production!
+import os
+
 DEBUG = True
 # Django silk
 OPEN_SILK = False
@@ -18,6 +20,15 @@ DATABASE_USER = "myuser"
 DATABASE_PASSWORD = "myuser"
 # 数据库名
 DATABASE_NAME = "djangoself"
+
+EMAIL_HOST = "smtp.163.com"
+# 这里要注释掉否则异常****
+# EMAIL_PORT = 465
+# 是否使用安全连接
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+# 不是登录密码，是安全码，需要去网页版邮箱申请
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 
 # ================================================= #
 # ************** redis 数据库配置  ************** #
