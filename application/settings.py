@@ -36,8 +36,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    'rest_framework',
+
     'apps.baseapp',
-    'apps.appdjango',
+    'apps.djapp',
+    'apps.drfapp',
 ]
 
 MIDDLEWARE = [
@@ -106,6 +110,21 @@ if OPEN_SILK:
     # 如果没有本设置，prof文件将默认保存在MEDIA_ROOT里
     SILKY_PYTHON_PROFILER_RESULT_PATH = SILK_RESULT_PATH
 
+if DEBUG:
+    INSTALLED_APPS += ['drf_yasg']
+
+    SWAGGER_SETTINGS = {
+        'SECURITY_DEFINITIONS': {
+            'basic': {
+                'type': 'basic'
+            }
+        },
+    }
+
+    REDOC_SETTINGS = {
+        'LAZY_RENDERING': False,
+    }
+
 if DATABASE_TYPE == "MYSQL":
     # Mysql数据库
     DATABASES = {
@@ -170,6 +189,10 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+REST_FRAMEWORK = {
+    'EXCEPTION_HANDLER': 'application.utils.exception.custom_exception_handler'
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
