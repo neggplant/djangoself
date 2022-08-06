@@ -6,4 +6,5 @@ urlpatterns = [
     path('health/', views.health, name='health1'),
     path('async_sleep/', views.AsyncSleep.as_view()),
     path('sleep/', views.sleep_view),
+    path('exc/', views.exc_view),
 ]

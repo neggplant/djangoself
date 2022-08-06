@@ -20,12 +20,6 @@ def async_sleep(request):
     return JsonResponse("async_sleep:{},{}".format(x, y), safe=False)
 
 
-def sleep_view(request):
-    sleep_time = int(request.GET.get("sleep_time", 1))
-    time.sleep(sleep_time)
-    return JsonResponse("sleep_view:{}".format(sleep_time), safe=False)
-
-
 class AsyncSleep(View):
 
     def get(self, request):
