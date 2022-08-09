@@ -1,0 +1,8 @@
+FROM python:3.9.13-buster
+
+ENV PYTHONUNBUFFERD 1
+
+WORKDIR /djangoself
+
+COPY requirements.txt /djangoself
+RUN pip install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com -r requirements.txt

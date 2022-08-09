@@ -1,7 +1,8 @@
 from django.db.models import Count, Avg
+from django.views.decorators.cache import cache_page
 
 from ..models import Snippet
-from ..serializers import SnippetSerializer
+from ..serializers import SnippetSerializer, SnippetSerializer1
 from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -24,6 +25,7 @@ class SnippetAggregate(APIView):
         serializer = SnippetSerializer(snippets, many=True)
         return Response(serializer.data)
 
+    @cache_page(60 * 15)
     def post(self, request, format=None):
         serializer = SnippetSerializer(data=request.data)
         if serializer.is_valid():
@@ -39,13 +41,14 @@ class SnippetDetail(APIView):
 
     def get_object(self, pk):
         try:
-            return Snippet.objects.get(pk=pk)
+            return Snippet.objects.filter(pk=pk).defer("title")
         except Snippet.DoesNotExist:
             raise Http404
 
     def get(self, request, pk, format=None):
         snippet = self.get_object(pk)
-        serializer = SnippetSerializer(snippet)
+        print(snippet[0].code)
+        serializer = SnippetSerializer1(snippet, many=True)
         return Response(serializer.data)
 
     def put(self, request, pk, format=None):
@@ -62,7 +65,7 @@ class SnippetDetail(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class SnippetList1(generics.ListCreateAPIView):
+class Snippets(generics.ListCreateAPIView):
     queryset = Snippet.objects.all()
     serializer_class = SnippetSerializer
 
