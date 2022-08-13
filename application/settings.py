@@ -52,6 +52,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'application.utils.middleware.ResponseTimeViewMiddleware',
 ]
 
 ROOT_URLCONF = 'application.urls'
@@ -325,6 +326,10 @@ LOGGING = {
         },
         'django.db': {
             'handlers': ['db'],
+            'level': 'DEBUG',
+        },
+        'application': {
+            'handlers': ['apps'],
             'level': 'DEBUG',
         },
     }
